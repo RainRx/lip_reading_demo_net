@@ -14,7 +14,7 @@ class ReadData(Dataset):
         self.data = []
 
         # linux: /   windows:\\
-        pic_file_path = [root for root, dirs, files in os.walk(self.data_root) if root.split('/')[-1]!=self.data_root.split('/')[-1]]
+        pic_file_path = [root for root, dirs, files in os.walk(self.data_root) if root.split('/')[-1] != self.data_root.split('/')[-1]]
         file_names = [i.split('/')[-1] for i in pic_file_path]
 
         self.lengths = [len(os.listdir(path)) for path in pic_file_path]
