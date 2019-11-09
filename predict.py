@@ -2,7 +2,7 @@ import torch
 import pandas as pd
 from torch.autograd import Variable
 from torch.utils.data import DataLoader
-from LipNet import LipNet
+from models.LipNet import LipNet
 from LipReadDataTest import ReadData as ReadDataTest
 import opt
 
