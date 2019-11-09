@@ -17,7 +17,8 @@ def predict():
     # device = torch.device('cpu')
 
     model = LipNet().to(device)
-    model.load_state_dict(torch.load("./weight/demo_net_epoch_2.pt"))
+    if len(opt.load_model):
+        model.load_state_dict(torch.load("./weight/demo_net_epoch_2.pt"))
     model.eval()
 
     with torch.no_grad():

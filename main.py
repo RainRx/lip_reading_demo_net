@@ -1,10 +1,10 @@
 from tensorboardX import SummaryWriter
-import os
 import torch
 from torch.utils.data import DataLoader
 from torch.autograd import Variable
 from LipReadDataTrain import ReadData
 from LipNet import LipNet, LipSeqLoss
+from valid import valid
 import opt
 
 
@@ -21,6 +21,8 @@ def main():
     # device = torch.device('cpu')
 
     model = LipNet().to(device)
+    if len(opt.load_model):
+        model.load_state_dict(torch.load("./weight/demo_net_epoch_2.pt"))
     optimizer = torch.optim.Adam(model.parameters(), lr=opt.learning_rate)
     loss_fc = LipSeqLoss().to(device)
 
@@ -43,7 +45,7 @@ def main():
             # save model
         if epoch % 5 == 0:
             torch.save(model.state_dict(), "./weight/demo_net_epoch_{}.pt".format(epoch))
-        val()
+        valid(model, epoch)
 
 
 if __name__ == "__main__":
