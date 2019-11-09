@@ -4,6 +4,7 @@ import torch.nn.functional as F
 from collections import OrderedDict
 from torch.autograd import Variable
 
+
 class LipSeqLoss(nn.Module):
  
     def __init__(self):
@@ -16,8 +17,8 @@ class LipSeqLoss(nn.Module):
         for i in range(transposed.size(0)):
             loss.append(self.criterion(transposed[i, ], target.squeeze(1)).unsqueeze(1))
         loss = torch.cat(loss, 1)
-        
-        #GPU version
+
+        # GPU version
         mask = torch.zeros(loss.size(0), loss.size(1)).float().cuda()
         # Cpu version
 #         mask = torch.zeros(loss.size(0), loss.size(1)).float()   
@@ -27,6 +28,7 @@ class LipSeqLoss(nn.Module):
             mask[i, L-1] = 1.0
         loss = (loss * mask).sum() / mask.sum()
         return loss
+
 
 class LipNet(torch.nn.Module):
     def __init__(self, init_features_num=64, drop_rate=0.3, type_class=313):
@@ -48,8 +50,7 @@ class LipNet(torch.nn.Module):
         self.fc = nn.Sequential(
             nn.Dropout(self.drop_rate),
             nn.Linear(512, self.type_class) )
-        
-        
+
     def forward(self, x):
         self.gru1.flatten_parameters()
         self.gru2.flatten_parameters()
@@ -64,5 +65,3 @@ class LipNet(torch.nn.Module):
         # Fc
         fc = self.fc(rnn).log_softmax(-1)
         return fc
-    
-    

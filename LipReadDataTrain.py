@@ -6,6 +6,7 @@ import torch
 from torch.utils.data import Dataset
 import torchvision.transforms as transforms
 
+
 class ReadData(Dataset):
 
     def __init__(self, image_root, label_root, seq_max_lens):
@@ -23,8 +24,7 @@ class ReadData(Dataset):
             save_dict.to_csv('./dictionary/dictionary.csv', encoding='utf8', index=None)  #save dict
 
             self.data = [(line[0], self.dictionary.index(line[1]), length) for line, length in zip(lines, self.lengths)]
-            self.data = list(filter(lambda sample: sample[-1] <= self.seq_max_lens, self.data))      
-
+            self.data = list(filter(lambda sample: sample[-1] <= self.seq_max_lens, self.data))
 
     def __len__(self):
         return len(self.data)
@@ -52,4 +52,4 @@ class ReadData(Dataset):
             vlm[:, i] = result
         
         return {'volume': vlm, 'label': torch.LongTensor([label]), 'length': length}
-  
+

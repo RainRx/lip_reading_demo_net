@@ -5,6 +5,7 @@ import torch
 from torch.utils.data import Dataset
 import torchvision.transforms as transforms
 
+
 class ReadData(Dataset):
 
     def __init__(self, image_root, seq_max_lens=15):
