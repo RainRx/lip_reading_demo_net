@@ -2,10 +2,10 @@
 <project version="4">
   <component name="PublishConfigData">
     <serverData>
-      <paths name="scu@10.132.40.157:22">
+      <paths name="scu@10.132.40.157:22 (1)">
         <serverdata>
           <mappings>
-            <mapping deploy="/tmp/lip_reading_demo_net" local="$PROJECT_DIR$" web="/" />
+            <mapping deploy="/tmp/demo" local="$PROJECT_DIR$" web="/" />
           </mappings>
         </serverdata>
       </paths>
