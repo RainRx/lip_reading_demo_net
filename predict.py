@@ -2,7 +2,7 @@ import torch
 import pandas as pd
 from torch.autograd import Variable
 from torch.utils.data import DataLoader
-from models.LipNet import LipNet
+from models.LipNet import LipReading
 from LipReadDataTest import ReadData as ReadDataTest
 import opt
 
@@ -16,7 +16,7 @@ def predict():
     # # CPU
     # device = torch.device('cpu')
 
-    model = LipNet().to(device)
+    model = LipReading().to(device)
     if len(opt.load_model):
         model.load_state_dict(torch.load("./weight/demo_net_epoch_2.pt"))
     model.eval()

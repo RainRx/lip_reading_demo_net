@@ -29,9 +29,9 @@ class ReadData(Dataset):
         files = [os.path.join(root_add_filename, ('{}' + '.png').format(i)) for i in range(1, pic_nums+1)]
         files = filter(lambda path: os.path.exists(path), files)
         frames = [cv2.imread(file) for file in files] 
-        frames_ = [cv2.cvtColor(img, cv2.COLOR_BGR2RGB) for img in frames]
-        length = len(frames_)    
-        channels = 3
+        frames_ = [cv2.cvtColor(img, cv2.COLOR_BGR2GRAY) for img in frames]
+        length = len(frames_)
+        channels = 1
         picture_h_w = 112
         vlm = torch.zeros((channels, self.seq_max_lens, picture_h_w, picture_h_w))
         for i in range(len(frames_)):

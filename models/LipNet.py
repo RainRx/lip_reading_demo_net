@@ -1,50 +1,62 @@
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
-from collections import OrderedDict
 from models.modules import _DenseBlock, _Transition
-from torch.autograd import Variable
-import opt
+from collections import OrderedDict
 import math
+from torchsummaryX import summary
 
 
-class LipSeqLoss(nn.Module):
- 
+class NLLSequenceLoss(nn.Module):
+    """
+    Custom loss function.
+    Returns a loss that is the sum of all losses at each time step.
+    """
+
     def __init__(self):
-        super(LipSeqLoss, self).__init__()
+        super(NLLSequenceLoss, self).__init__()
         self.criterion = nn.NLLLoss(reduction='none')
 
-    def forward(self, input, length, target):
+    def forward(self, input, length, target, every_frame=False):
         loss = []
         transposed = input.transpose(0, 1).contiguous()
         for i in range(transposed.size(0)):
-            loss.append(self.criterion(transposed[i, ], target.squeeze(1)).unsqueeze(1))
+            loss.append(self.criterion(transposed[i, ], target).unsqueeze(1))
         loss = torch.cat(loss, 1)
-
-        # GPU version
         mask = torch.zeros(loss.size(0), loss.size(1)).float().cuda()
-        # Cpu version
-#         mask = torch.zeros(loss.size(0), loss.size(1)).float()   
 
         for i in range(length.size(0)):
             L = min(mask.size(1), length[i])
-            mask[i, L-1] = 1.0
+            if every_frame:
+                mask[i, :L] = 1.0
+            else:
+                mask[i, L - 1] = 1.0
         loss = (loss * mask).sum() / mask.sum()
         return loss
 
 
-class LipNet(torch.nn.Module):
-    def __init__(self, growth_rate=opt.growth_rate, num_init_features=opt.init_features_num,
-                 drop_rate=opt.drop_rate, type_class=opt.num_classes, bn_size=opt.BN_size):
-        super(LipNet, self).__init__()
-        block_config = (4, 8, 12, 8)
-        self.drop_rate = drop_rate
-        self.type_class = type_class 
+def _validate(modelOutput, length, labels, every_frame=False):
+    labels = labels.cpu()
+    averageEnergies = torch.zeros((modelOutput.size(0), modelOutput.size(-1)))
+    for i in range(modelOutput.size(0)):
+        if every_frame:
+            averageEnergies[i] = torch.mean(modelOutput[i, :length[i]], 0)
+        else:
+            averageEnergies[i] = modelOutput[i, length[i] - 1]
 
-        # Cnn
+    _, maxindices = torch.max(averageEnergies, 1)
+    count = torch.sum(maxindices == labels)
+    return count
+
+
+class LipReading(torch.nn.Module):
+    def __init__(self, growth_rate=32, num_init_features=64, bn_size=4, drop_rate=0.2, num_classes=314):
+        super(LipReading, self).__init__()
+        # block_config = (6, 12, 24, 16)
+        block_config = (4, 8, 12, 8)
+
         self.features = nn.Sequential(OrderedDict([
             ('conv0',
-             nn.Conv3d(3, num_init_features, kernel_size=(5, 7, 7), stride=(1, 2, 2), padding=(2, 3, 3), bias=False)),
+             nn.Conv3d(1, num_init_features, kernel_size=(5, 7, 7), stride=(1, 2, 2), padding=(2, 3, 3), bias=False)),
             ('norm0', nn.BatchNorm3d(num_init_features)),
             ('relu0', nn.ReLU(inplace=True)),
             ('pool0', nn.MaxPool3d(kernel_size=(1, 3, 3), stride=(1, 2, 2), padding=(0, 1, 1))),
@@ -62,16 +74,21 @@ class LipNet(torch.nn.Module):
                 self.features.add_module('transition%d' % (i + 1), trans)
                 num_features = num_features // 2
 
+        # Final batch norm
+
         self.features.add_module('norm5', nn.BatchNorm3d(num_features))
-        # Rnn
-        self.gru1 = nn.GRU(64*28*28, 256, bidirectional=True, batch_first=True) 
+        self.gru1 = nn.GRU(536 * 3 * 3, 256, bidirectional=True, batch_first=True)
         self.gru2 = nn.GRU(512, 256, bidirectional=True, batch_first=True)
-        # Fc
+
         self.fc = nn.Sequential(
-            nn.Dropout(self.drop_rate),
-            nn.Linear(512, self.type_class)
+            nn.Dropout(0.5),
+            nn.Linear(512, num_classes)
         )
+        self.loss = NLLSequenceLoss
         self._initialize_weights()
+
+    def validator_function(self):
+        return _validate
 
     def _initialize_weights(self):
         for m in self.modules():
@@ -108,14 +125,19 @@ class LipNet(torch.nn.Module):
     def forward(self, x):
         self.gru1.flatten_parameters()
         self.gru2.flatten_parameters()
-        # Cnn
-        cnn = self.features(x)
-        cnn = cnn.permute(0, 2, 1, 3, 4).contiguous()
-        batch, seq, channel, high, width = cnn.size()
-        cnn = cnn.view(batch, seq, -1)
-        # Rnn
-        rnn, _ = self.gru1(cnn)
-        rnn, _ = self.gru2(rnn)
-        # Fc
-        fc = self.fc(rnn).log_softmax(-1)
-        return fc
+        f2 = self.features(x)
+        f2 = f2.permute(0, 2, 1, 3, 4).contiguous()
+        batch, seq, channel, height, width = f2.size()
+        f2 = f2.view(batch, seq, -1)
+        f2, _ = self.gru1(f2)
+        f2, _ = self.gru2(f2)
+        f2 = self.fc(f2).log_softmax(-1)
+        return f2
+
+
+if __name__ == '__main__':
+    options = {"model": {'numclasses': 313}}
+    data = torch.rand((4, 1, 18, 112, 112))
+    m = LipReading()
+    summary(m, data)
+
