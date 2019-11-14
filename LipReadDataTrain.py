@@ -8,7 +8,6 @@ import torchvision.transforms as transforms
 
 
 class ReadData(Dataset):
-
     def __init__(self, image_root, label_root, seq_max_lens):
         self.seq_max_lens = seq_max_lens
         self.data = []
@@ -16,8 +15,8 @@ class ReadData(Dataset):
         with open(label_root, 'r', encoding='utf8') as f:
             lines = f.readlines()
             lines = [line.strip().split('\t') for line in lines]
-            self.dictionary = sorted(np.unique([line[1] for line in lines])) 
-            pic_path = [image_root + '/' + line[0] for line in lines] 
+            self.dictionary = sorted(np.unique([line[1] for line in lines]))
+            pic_path = [image_root + '/' + line[0] for line in lines]
             self.lengths = [len(os.listdir(path)) for path in pic_path]
             
             save_dict = pd.DataFrame(self.dictionary, columns=['dict'])
@@ -34,10 +33,11 @@ class ReadData(Dataset):
         path = os.path.join(self.data_root, path)
         files = [os.path.join(path, ('{}' + '.png').format(i)) for i in range(1, pic_nums+1)]
         files = filter(lambda path: os.path.exists(path), files)
-        frames = [cv2.imread(file) for file in files ] 
-        frames_ = [cv2.cvtColor(img, cv2.COLOR_BGR2RGB) for img in frames]       
-        length = len(frames_)
-        channels = 3
+        frames = [cv2.imread(file) for file in files]
+        frames_ = [cv2.cvtColor(img, cv2.COLOR_BGR2GRAY) for img in frames]
+        # length = len(frames_)
+        length = pic_nums
+        channels = 1
         picture_h_w = 112
         vlm = torch.zeros((channels, self.seq_max_lens, picture_h_w, picture_h_w))
         
@@ -50,6 +50,7 @@ class ReadData(Dataset):
                 transforms.Normalize([0, 0, 0], [1, 1, 1]) 
             ])(frames_[i])
             vlm[:, i] = result
-        
-        return {'volume': vlm, 'label': torch.LongTensor([label]), 'length': length}
+        # print(vlm.shape, label, length)
+        return {'volume': vlm, 'label': label, 'length': length}
+
 

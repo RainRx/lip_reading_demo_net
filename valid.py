@@ -5,10 +5,12 @@ from LipReadDataTest import ReadData
 import opt
 
 
+
 def valid(model, epoch):
     test_dataset = ReadData(opt.test_image_file, seq_max_lens=24)
     test_data_loader = DataLoader(test_dataset, batch_size=opt.num_workers, shuffle=True, num_workers=opt.num_workers, drop_last=False)
     n_samples = len(test_data_loader.dataset)
+
     # GPU
     device = torch.device('cuda:0')
     # # CPU
@@ -18,10 +20,10 @@ def valid(model, epoch):
     with torch.no_grad():
         running_corrects = 0.
 
-        for i_batch, sample_batched in enumerate(test_data_loader):
+        for i_batch, sample_batched in enumerate(dataloader):
 
             input_data = Variable(sample_batched['volume']).to(device)
-            labels = Variable(sample_batched['label']).to(device)
+            labels = Variable(sample_batched['label']).long().to(device)
             length = Variable(sample_batched['length']).to(device)
 
             outputs = model(input_data)
