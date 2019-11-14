@@ -11,6 +11,7 @@ BN_size = 4
 train_image_file = "data/lip_train/train_dataset"
 train_label_file = "data/lip_train.txt"
 test_image_file = "data/test/img"
+valid_image_file = "data/lip_train/train_dataset"
+valid_label_file = "data/lip_valid.txt"
 dictionary = "dictionary/dictionary.csv"
 load_model = ''
-

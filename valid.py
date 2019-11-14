@@ -1,12 +1,12 @@
 import torch
 from torch.autograd import Variable
 from torch.utils.data import DataLoader
-from LipReadDataTest import ReadData as ReadDataTest
+from LipReadDataTest import ReadData
 import opt
 
 
 def valid(model, epoch):
-    test_dataset = ReadDataTest(opt.test_image_file, seq_max_lens=24)
+    test_dataset = ReadData(opt.test_image_file, seq_max_lens=24)
     test_data_loader = DataLoader(test_dataset, batch_size=opt.num_workers, shuffle=True, num_workers=opt.num_workers, drop_last=False)
     n_samples = len(test_data_loader.dataset)
     # GPU
